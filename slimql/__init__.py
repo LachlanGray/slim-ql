@@ -35,8 +35,6 @@ class CompiledQuery:
         self.segments = SegmentedQuery(query)
         self.variables = {} # doesn't hold state just metadata
         self.args = args
-        if "self" in self.args:
-            self.args = [arg if arg != "self" else "self_" for arg in self.args]
         self.kwargs = kwargs
 
         # self.model_definitions = []
@@ -113,10 +111,13 @@ class CompiledQuery:
                 for part in parts:
                     if part.startswith("["): # is fill
                         part = part[1:-1]
-                        self.compiled.append(f"{indent*' '}{part} = llm(''.join(prompt), stop=[{', '.join([repr(s) for s in self.variables[part]['stop_phrases']])}])['choices'][0]['text']")
+                        if 'stop_phrases' in self.variables[part]:
+                            self.compiled.append(f"{indent*' '}{part} = llm(''.join(prompt), stop=[{', '.join([repr(s) for s in self.variables[part]['stop_phrases']])}])['choices'][0]['text']")
+                        else:
+                            self.compiled.append(f"{indent*' '}{part} = llm(''.join(prompt))['choices'][0]['text']")
                         self.compiled.append(f"{indent*' '}prompt.append({part})")
                     else: # is prompt
-                        line = indent*' ' + f"prompt.append(f'{part}')"
+                        line = indent*' ' + f"prompt.append(f\"{part}\")"
                         self.compiled.append(line)
 
             else:
@@ -129,12 +130,11 @@ def query(fct):
     source = inspect.getsource(fct)
     lines = source.split("\n")
     lines = lines[1:]
-    print(lines[0])
+    global_indent = len(lines[0]) - len(lines[0].lstrip())
+    lines = [line[global_indent:] for line in lines]
     function_name, args, kwargs = parse_function_def(lines[0])
     filename = f'./compiled/{function_name}.py'
 
-    # if compiling is slow change this to load cached
-    ###############
     dedented_lines = []
     for line in lines[2:]:
         if line.strip() in ["\"\"\"", "'''"]:
@@ -143,10 +143,8 @@ def query(fct):
     source = "\n".join(dedented_lines)
     compiled = CompiledQuery(source, *args, **kwargs)
     os.makedirs(os.path.dirname(filename), exist_ok=True)
-    input(str(compiled))
     with open(filename, 'w') as f:
         f.write(str(compiled))
-    ###############
 
     spec = importlib.util.spec_from_file_location("new_module", filename)
     new_module = importlib.util.module_from_spec(spec)

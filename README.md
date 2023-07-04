@@ -17,10 +17,10 @@ All prompting is done through decorated functions that work like `@lmql.query` f
 In a nutshell:
 - There is a `sample`, `from`, and `where` segment in each prompt
     - `sample` contains the main prompt template
-    - `from` specifies the model being used
-    - `where` specifies conditions/constraints for generated variables
+    - `from` specifies the model(s) being used
+    - `where` (optional) specifies conditions/constraints for generated variables
 - Each line in `sample` is either enclosed in double quotes `""` or not. 
-    - If it is, it is a *prompt line* and the is added to the prompt
+    - If it is, this is a *prompt line* and the line is appended to the prompt
     - If not, the line is executed as python
 - Prompt lines treat curly braces `{}` the same way as f-strings. I.e. if you have a function-local variable `x`, then you can insert it into the prompt as
     ```
@@ -82,14 +82,14 @@ These are 5 things Socrates the philosopher would say to Garfield the cat:
 5) ΨΥΧΗ (Psyché) - "Soul"
 ```
 
-which can be accessed as `prompt`, e.g. you could end the `sample` segment with `return prompt` and this is what the function would return.
+which can be accessed in list form as `prompt`, e.g. you could end the `sample` segment with `return "".join(prompt)` and this is what the function would return.
 
 
 ## TODO
 Everything so far was done in one night so there's plenty to add, and it probably has *surprise features*.
 
 Some things:
-- Alias models in the `from` and allow the use of different generation parameters and models across the prompt
+- Allow control of generation parameters (temperature, device, etc) and models throughout the prompt
 - Make llm calls through a wrapper so it's easy to use any kind of model and not just GGML compiled ones
 - Regex (`matches`) constraint
 - Role tags for chat models
