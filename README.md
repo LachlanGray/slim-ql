@@ -57,7 +57,7 @@ def would_say_to(person1, person2, n=5):
             phrases.append(phrase)
         return phrases
     from
-        "models/3B/orca_mini_3B-GGML/orca-mini-3b.ggmlv3.q4_0.bin"
+        LlamaCPP(model_path="models/3B/orca_mini_3B-GGML/orca-mini-3b.ggmlv3.q4_0.bin", n_gpu_layers=1, verbose=False)
     where
         stops phrase \n, .
     """
