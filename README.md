@@ -1,7 +1,7 @@
 # sLiMQL
 A small, synchronous prompting language focused on local inference with [LMQL](https://github.com/eth-sri/lmql/tree/main)-like syntax.
 
-Currently only works with [llama.cpp](https://github.com/ggerganov/llama.cpp) compiled models, but the plan is to support others like [mlc-llm](https://github.com/mlc-ai/mlc-llm), and to add an api so anything can be plugged in.
+Currently only works with [llama.cpp](https://github.com/ggerganov/llama.cpp) compiled models, but it's possible to plug anything in (documentation pending; see `model_backends.py::LlamaCPP`).
 
 ## Installation
 Right now [llama-cpp-python](https://llama-cpp-python.readthedocs.io/en/latest/) is the only dependency. It's on PyPI but if you are on apple silicon, install it before `slmql` following [these instructions](https://llama-cpp-python.readthedocs.io/en/latest/install/macos/).
@@ -82,14 +82,13 @@ These are 5 things Socrates the philosopher would say to Garfield the cat:
 5) ΨΥΧΗ (Psyché) - "Soul"
 ```
 
-which can be accessed in list form as `prompt`, e.g. you could end the `sample` segment with `return "".join(prompt)` and this is what the function would return.
+The prompt is a growing list which can be accessed as `prompt`, e.g. you could end the `sample` segment with `return "".join(prompt)` and this is what the function would return.
 
 
 ## TODO
-Everything so far was done in one night so there's plenty to add, and it probably has *surprise features*.
+Most of this was done in one night so there's plenty to add, and it probably has *surprise features*.
 
 Some things:
-- Allow control of generation parameters (temperature, device, etc) and models throughout the prompt
-- Make llm calls through a wrapper so it's easy to use any kind of model and not just GGML compiled ones
-- Regex (`matches`) constraint
-- Role tags for chat models
+- documentation (will do it when I'm back)
+- Dynamic control of generation parameters
+- Regex constraints
