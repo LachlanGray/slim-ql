@@ -22,7 +22,7 @@ In a nutshell:
 - Each line in `sample` is either enclosed in double quotes `""` or not. 
     - If it is, this is a *prompt line* and the line is appended to the prompt
     - If not, the line is executed as python
-- Prompt lines treat curly braces `{}` the same way as f-strings. I.e. if you have a function-local variable `x`, then you can insert it into the prompt as
+- Prompt lines treat curly braces `{}` the same way as f-strings. I.e. if you have a variable `x`, then you can insert it into the prompt as
     ```
     ...
     "This prompt line says that x is {x}"
