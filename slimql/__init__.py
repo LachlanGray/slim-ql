@@ -31,11 +31,13 @@ class SegmentedQuery:
 
 
 class CompiledQuery:
-    def __init__(self, query: str, *args, **kwargs):
+    def __init__(self, query: str, *args, parent_frame_var_names=None, **kwargs):
         self.segments = SegmentedQuery(query)
         self.variables = {} # doesn't hold state just metadata
         self.args = args
         self.kwargs = kwargs
+        self.parent_frame_var_names = parent_frame_var_names
+        self.model_str = ""
 
         # self.model_definitions = []
         self.sample = []
@@ -56,7 +58,8 @@ class CompiledQuery:
         # for line in from_:
         #     path, name = line.split(" as ")
         path = self.segments.from_[0].strip().split("(")[0]
-        self.compiled.append(f"llm = Llama(model_path={path}, n_gpu_layers=1, verbose=False)")
+        # self.compiled.append(f"llm = Llama(model_path={path}, n_gpu_layers=1, verbose=False)")
+        self.model_str = f"llm = Llama(model_path={path}, n_gpu_layers=1, verbose=False)"
 
     def parse_constraints(self):
         for line in self.segments.where:
@@ -90,8 +93,24 @@ class CompiledQuery:
 
     def parse_prompt(self):
         arg_string = ", ".join([arg for arg in self.args])
+        if not arg_string:
+            arg_string = "*args"
+        else:
+            arg_string += ", *args"
+
         kwarg_string = ", ".join([f'{kw}={repr(default)}' for kw, default in self.kwargs.items()])
-        self.compiled.append(f"def query({arg_string}, {kwarg_string}):")
+        if not kwarg_string:
+            kwarg_string = "**kwargs"
+        else:
+            kwarg_string += ", **kwargs"
+
+        self.compiled.append(f"def query({arg_string}, parent_frame_vars=None, {kwarg_string}):")
+        self.compiled.append(f"    {self.model_str}")
+
+        if self.parent_frame_var_names:
+            for name in self.parent_frame_var_names:
+                self.compiled.append(f"    {name} = parent_frame_vars['{name}']")
+
         self.compiled.append("    prompt = []")
 
         for line in self.segments.sample:
@@ -135,17 +154,33 @@ def query(fct):
     function_name, args, kwargs = parse_function_def(lines[0])
     filename = f'./compiled/{function_name}.py'
 
+    # Get local and global variables from the calling frame
+    calling_frame = inspect.stack()[1]
+    local_vars = {k: v for k, v in calling_frame.frame.f_locals.items() if not k.startswith('_')}
+    local_vars.pop("query", None)
+    global_vars = {k: v for k, v in calling_frame.frame.f_globals.items() if not k.startswith('_')}
+    global_vars.pop("query", None)
+
+    parent_frame_vars = {**global_vars, **local_vars}
+    parent_frame_vars = {k: v for k, v in parent_frame_vars.items() if not k in args and not k in kwargs}
+
+    # # Merge them into the kwargs, giving preference to the original kwargs
+    # kwargs = {**global_vars, **local_vars, **kwargs}
+    # input(f"{kwargs}")
+
     dedented_lines = []
     for line in lines[2:]:
         if line.strip() in ["\"\"\"", "'''"]:
             break
         dedented_lines.append(line[4:])
+
     source = "\n".join(dedented_lines)
-    compiled = CompiledQuery(source, *args, **kwargs)
+    compiled = CompiledQuery(source, *args, parent_frame_var_names=parent_frame_vars.keys(), **kwargs)
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'w') as f:
         f.write(str(compiled))
 
+    # import compiled file as module
     spec = importlib.util.spec_from_file_location("new_module", filename)
     new_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(new_module)
@@ -153,7 +188,7 @@ def query(fct):
     new_fct = getattr(new_module, "query")
 
     def wrapper(*args, **kwargs):
-        return new_fct(*args, **kwargs)
+        return new_fct(*args, parent_frame_vars=parent_frame_vars, **kwargs)
 
     return wrapper
 
