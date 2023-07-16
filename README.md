@@ -89,6 +89,6 @@ The prompt is a growing list which can be accessed as `prompt`, e.g. you could e
 Most of this was done in one night so there's plenty to add, and it probably has *surprise features*.
 
 Some things:
-- documentation (will do it when I'm back)
+- documentation
 - Dynamic control of generation parameters
 - Regex constraints

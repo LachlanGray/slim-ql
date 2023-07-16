@@ -20,7 +20,6 @@ class LLMBackend:
         raise NotImplementedError
 
 
-
 class LlamaCPP(LLMBackend):
     def __init__(self, init_kwarg_string):
         """
